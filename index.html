@@ -64,6 +64,9 @@
                 <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
             </div>
         </div>
+        <button onclick="toggleStats(true)" class="text-gray-400 hover:text-indigo-600 transition mr-2">
+            <i class="fas fa-chart-bar fa-lg"></i>
+        </button>
         <button onclick="toggleView('admin')" class="text-gray-400 hover:text-indigo-600 transition">
             <i class="fas fa-cog fa-lg"></i>
         </button>
@@ -74,7 +77,7 @@
         <div id="empty-state" class="hidden flex-col items-center text-center animate-float">
             <div class="text-6xl mb-4">🎉</div>
             <h2 class="text-2xl font-bold text-gray-800">Hoàn thành!</h2>
-            <p class="text-gray-500 mt-2">Bạn đã học hết thẻ của hôm nay.</p>
+            <p class="text-gray-500 mt-2">Bạn đã học hết thẻ của nhóm **<span id="current-category-name" class="font-bold"></span>** hôm nay.</p>
             <button onclick="app.resetDueDatesForDemo()" class="mt-6 px-6 py-2 bg-indigo-100 text-indigo-600 rounded-full font-bold text-sm">
                 Reset để học lại
             </button>
@@ -128,15 +131,55 @@
                 </div>
             </section>
 
-            <section id="card-manager" class="bg-white p-4 rounded-xl border shadow-sm opacity-50 pointer-events-none transition-opacity">
+            <section class="bg-white p-4 rounded-xl border shadow-sm">
+                <h3 class="font-bold text-indigo-700 mb-3"><i class="fas fa-layer-group mr-2"></i>Quản lý Nhóm Thẻ</h3>
+                
+                <p class="text-sm text-gray-500 mb-2">Chọn nhóm thẻ muốn ôn tập:</p>
+                <select id="study-category-filter" onchange="admin.selectStudyCategory(this.value)" class="w-full p-2 border rounded text-sm bg-white mb-4">
+                    <option value="all">Tất cả Thẻ (Mặc định)</option>
+                </select>
+
+                <h4 class="font-bold text-gray-600 mb-2">Các nhóm thẻ tùy chỉnh</h4>
+                <div id="category-manager-table" class="border rounded-lg overflow-hidden">
+                    </div>
+
+                <button onclick="admin.openBatchCategoryModal()" class="mt-4 w-full bg-indigo-500 text-white p-2 rounded font-bold hover:bg-indigo-600 transition">
+                    <i class="fas fa-plus mr-1"></i> Quản lý nhóm thẻ (Gán/Xóa)
+                </button>
+            </section>
+            
+            <section class="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm">
+                <h3 class="font-bold text-red-700 mb-3"><i class="fas fa-redo-alt mr-2"></i>Reset Tiến độ Học</h3>
+                <p class="text-sm text-red-500 mb-4">Thao tác này sẽ **xóa toàn bộ tiến độ học (SRS data)** của TẤT CẢ thẻ, đặt chúng trở lại trạng thái "Chưa học".</p>
+                <button onclick="app.resetProgress()" class="w-full bg-red-600 text-white p-2 rounded font-bold hover:bg-red-700 transition">
+                    Xóa toàn bộ Tiến độ Học
+                </button>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <section id="card-manager" class="bg-white p-4 rounded-xl border shadow-sm opacity-50 pointer-events-none transition-opacity relative">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-gray-700"><i class="fas fa-database mr-2"></i>Quản lý thẻ</h3>
                     <button onclick="admin.openEditModal()" class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm mới</button>
                 </div>
                 
-                <div class="max-h-60 overflow-y-auto border rounded divide-y" id="admin-card-list">
+                <div class="flex p-3 border-b font-bold text-xs text-gray-600 bg-gray-100 rounded-t-lg">
+                    <input type="checkbox" id="select-all-cards" onclick="admin.toggleSelectAllAdmin(this.checked)" class="h-4 w-4 rounded border-gray-300 text-indigo-600 mr-3">
+                    <span class="flex-1">Thẻ (Kanji/Nghĩa)</span>
+                    <span class="w-20 text-right">Hành động</span>
+                </div>
+                
+                <div id="admin-card-list" class="max-h-96 overflow-y-auto border-x border-b rounded-b-lg divide-y">
                     </div>
                 <button onclick="app.loadCards()" class="mt-2 w-full text-indigo-600 text-sm font-bold">Reload từ API</button>
+
+                <div id="batch-action-bar" class="fixed bottom-0 left-0 right-0 p-4 bg-indigo-600 text-white shadow-2xl z-50 transform translate-y-full transition-transform duration-300 flex justify-between items-center sm:max-w-xl sm:mx-auto sm:rounded-t-xl">
+                    <span id="selected-count" class="font-bold">Đã chọn: 0 thẻ</span>
+                    <button onclick="admin.openBatchCategoryModal()" class="bg-white text-indigo-600 py-2 px-4 rounded-lg font-bold hover:bg-gray-100 transition">
+                        <i class="fas fa-tags mr-1"></i> Gán Nhóm
+                    </button>
+                </div>
             </section>
         </div>
     </div>
@@ -157,11 +200,85 @@
             </div>
         </div>
     </div>
-	
-	<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex flex-col justify-center items-center transition-opacity">
-		<div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500 border-white mb-4"></div>
-		<p class="text-white font-bold text-lg animate-pulse">Đang xử lý...</p>
-	</div>
+
+    <div id="modal-batch-assign" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-xl">
+            <h3 class="font-bold text-lg mb-4 text-indigo-700"><i class="fas fa-tags mr-2"></i>Gán Nhóm cho Thẻ Đã Chọn</h3>
+            <span id="batch-assign-info" class="block text-sm text-gray-600 mb-4">Bạn đang gán nhóm cho **X** thẻ.</span>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="batch-category-select" class="block text-sm font-medium text-gray-700 mb-1">Chọn Nhóm Thẻ:</label>
+                    <select id="batch-category-select" class="w-full p-2 border rounded text-sm bg-white">
+                        <option value="NEW_CATEGORY">-- Tạo Nhóm Thẻ Mới --</option>
+                        </select>
+                    <input type="text" id="new-category-name" class="w-full p-2 border rounded mt-2 hidden" placeholder="Nhập tên nhóm mới...">
+                </div>
+
+                <div class="pt-2 border-t">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cách thức gán:</label>
+                    <div class="space-y-1">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="assignment-mode" value="replace" checked class="form-radio h-4 w-4 text-indigo-600">
+                            <span class="ml-2 text-sm text-gray-700">Thay thế nhóm hiện có (Xóa nhóm cũ, gán nhóm mới)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="assignment-mode" value="add" disabled class="form-radio h-4 w-4 text-indigo-600">
+                            <span class="ml-2 text-sm text-gray-400">Thêm vào nhóm hiện có (Chưa hỗ trợ gán nhiều nhóm)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-5 flex gap-3">
+                <button onclick="document.getElementById('modal-batch-assign').classList.add('hidden')" class="flex-1 py-2 bg-gray-100 rounded text-gray-600 font-bold">Hủy</button>
+                <button onclick="admin.saveBatchAssignment()" class="flex-1 py-2 bg-indigo-600 rounded text-white font-bold" id="save-batch-btn">Lưu Gán Nhóm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-stats" class="fixed inset-0 bg-white z-50 transform translate-y-full transition-transform duration-300 flex flex-col">
+        <div class="p-4 border-b flex justify-between items-center bg-indigo-50 text-indigo-800 shadow-sm">
+            <h2 class="font-bold text-lg"><i class="fas fa-chart-bar mr-2"></i>Thống kê Chi Tiết</h2>
+            <button onclick="toggleStats(false)" class="p-2 text-indigo-700"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 space-y-6">
+            
+            <section class="grid grid-cols-2 gap-4">
+                <div class="bg-blue-50 p-4 rounded-xl shadow-sm">
+                    <p class="text-xs text-blue-500 font-bold">Tổng thẻ đã học</p>
+                    <p id="stat-total-learned" class="text-2xl font-extrabold text-blue-800">0</p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-xl shadow-sm">
+                    <p class="text-xs text-red-500 font-bold">Thời gian học (phút)</p>
+                    <p id="stat-time-spent" class="text-2xl font-extrabold text-red-800">0</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-xl shadow-sm">
+                    <p class="text-xs text-green-500 font-bold">Tỷ lệ nhớ ước tính</p>
+                    <p id="stat-retention" class="text-2xl font-extrabold text-green-800">0%</p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-xl shadow-sm">
+                    <p class="text-xs text-yellow-500 font-bold">Streak (Ngày)</p>
+                    <p id="stat-streak" class="text-2xl font-extrabold text-yellow-800">0</p>
+                </div>
+            </section>
+
+            <hr class="border-gray-200">
+
+            <section>
+                <h3 class="font-bold text-gray-700 mb-3"><i class="fas fa-history mr-2"></i>Lịch ôn tập sắp tới (10 thẻ)</h3>
+                <div id="due-list-container" class="bg-white p-3 border rounded-lg max-h-80 overflow-y-auto hide-scrollbar">
+                    <p id="no-due-cards" class="text-gray-400 text-sm italic">Không có thẻ nào cần ôn tập trong tương lai gần.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex flex-col justify-center items-center transition-opacity">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500 border-white mb-4"></div>
+        <p class="text-white font-bold text-lg animate-pulse">Đang xử lý...</p>
+    </div>
 
     <script>
         // --- CONFIG & STATE ---
@@ -188,6 +305,9 @@
                 token: null,
                 username: null
             },
+            selectedCategory: 'all', 
+            cardCategoryMap: {},     // { 'cardId': 'Tên Nhóm' }
+
             startTime: Date.now()
         };
 
@@ -212,7 +332,13 @@
 
             loadSettings: () => {
                 const stored = localStorage.getItem('srs_settings');
-                if (stored) state.settings = JSON.parse(stored);
+                if (stored) {
+                    const storedSettings = JSON.parse(stored);
+                    state.settings = storedSettings;
+
+                    state.selectedCategory = storedSettings.selectedCategory || 'all';
+                    state.cardCategoryMap = storedSettings.cardCategoryMap || {};
+                }
                 document.getElementById('api-url').value = state.settings.apiUrl;
                 if (state.settings.token) admin.setLoggedInState(true);
             },
@@ -230,89 +356,103 @@
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
                     if (state.stats.lastStudyDate !== yesterday.toDateString()) {
-                        if (state.stats.lastStudyDate !== today) state.stats.streak = 0; // Reset if broken
+                        if (state.stats.lastStudyDate !== today) state.stats.streak = 0; 
                     }
                 }
             },
 
             saveProgress: () => {
                 state.stats.lastStudyDate = new Date().toDateString();
+                
+                state.settings.selectedCategory = state.selectedCategory;
+                state.settings.cardCategoryMap = state.cardCategoryMap;
+
                 localStorage.setItem('srs_progress', JSON.stringify({
                     progress: state.progress,
                     stats: state.stats
                 }));
+                localStorage.setItem('srs_settings', JSON.stringify(state.settings));
+                
                 ui.renderStats();
             },
 
             loadCards: async () => {
-                // Try API first, fallback to mock
                 if (state.settings.apiUrl) {
                     try {
-					    ui.showLoading(true);
+                        ui.showLoading(true);
                         const url = `${state.settings.apiUrl}?action=getFlashCards`;
-                        
-                        console.log("Fetching from API:", url);
-						const res = await fetch(url);
-						const result = await res.json();
+                        const response = await fetch(url);
+                        const result = await response.json();
 
-						if (result.success && Array.isArray(result.data)) {
-							console.log("Data from API:", result.data);
-							state.cards = result.data;
-						} else {
-							console.warn("Get data fail -> use mock");
-							state.cards = [...MOCK_DATA];
-						}
-                        
+                        if (result.success && Array.isArray(result.data)) {
+                            state.cards = result.data;
+                        } else {
+                            state.cards = [...MOCK_DATA];
+                        }
                     } catch (e) {
                         state.cards = [...MOCK_DATA];
                     } finally {
-						ui.showLoading(false);
-					}
+                        ui.showLoading(false);
+                    }
                 } else {
                     state.cards = [...MOCK_DATA];
                 }
+                
                 admin.renderCardList();
-				app.calculateDueCards(); 
-				ui.render();
+                app.calculateDueCards();
+                ui.render();
             },
 
             calculateDueCards: () => {
                 const now = Date.now();
-                state.dueCards = state.cards.filter(card => {
+                const selectedCategory = state.selectedCategory || 'all';
+                
+                let studyPool = [];
+                
+                if (selectedCategory === 'all') {
+                    studyPool = [...state.cards];
+                } else {
+                    studyPool = state.cards.filter(card => 
+                        state.cardCategoryMap[card.id] === selectedCategory
+                    );
+                }
+
+                state.dueCards = studyPool.filter(card => {
                     const prog = state.progress[card.id];
-                    if (!prog) return true; // New card
-                    return prog.nextReview <= now;
+                    if (!prog) return true; 
+                    return prog.nextReview <= now; 
                 });
-                // Shuffle slightly
+                
                 state.dueCards.sort(() => Math.random() - 0.5);
+                
+                ui.renderStats();
             },
 
-            // SRS Algorithm (Simplified SM-2)
             handleAnswer: (quality) => {
                 if (state.dueCards.length === 0) return;
 
-                const card = state.dueCards[0]; // Top card
+                const card = state.dueCards[0]; 
                 const prog = state.progress[card.id] || { interval: 0, ease: 2.5 };
                 
-                let nextIntervalMin = 0; // Minutes
+                let nextIntervalMin = 0; 
 
                 switch (quality) {
-                    case 'again': // 1 min
+                    case 'again': 
                         nextIntervalMin = 1;
                         prog.interval = 0; 
                         break;
-                    case 'hard': // 10 min
+                    case 'hard': 
                         nextIntervalMin = 10;
                         prog.interval = 0;
                         prog.ease = Math.max(1.3, prog.ease - 0.15);
                         break;
-                    case 'good': // 1 day * interval
+                    case 'good': 
                         if (prog.interval === 0) prog.interval = 1;
                         else if (prog.interval === 1) prog.interval = 6;
                         else prog.interval = Math.round(prog.interval * prog.ease);
                         nextIntervalMin = prog.interval * 24 * 60;
                         break;
-                    case 'easy': // 4 days * interval
+                    case 'easy': 
                          if (prog.interval === 0) prog.interval = 4;
                          else prog.interval = Math.round(prog.interval * prog.ease * 1.3);
                          prog.ease += 0.15;
@@ -320,26 +460,22 @@
                         break;
                 }
 
-                // Update Progress
                 state.progress[card.id] = {
                     ...prog,
                     nextReview: Date.now() + (nextIntervalMin * 60 * 1000)
                 };
 
-                // Update Stats
                 state.stats.totalLearned++;
                 if (state.stats.streak === 0) state.stats.streak = 1;
 
                 app.saveProgress();
 
-                // Remove from stack UI and Logic
                 ui.removeTopCard(quality);
                 setTimeout(() => {
                     state.dueCards.shift();
-                    ui.render(); // Re-render stack
-                    // If queue empty, show finished
+                    ui.render(); 
                     if (state.dueCards.length === 0) ui.showEmptyState();
-                }, 300); // Wait for animation
+                }, 300); 
             },
 
             resetDueDatesForDemo: () => {
@@ -348,225 +484,472 @@
                 app.calculateDueCards();
                 ui.hideEmptyState();
                 ui.render();
-            }
+            },
+            
+            resetProgress: () => {
+                if (!confirm('CẢNH BÁO! Bạn có chắc chắn muốn XÓA toàn bộ tiến độ học của mình không? Thao tác này không thể hoàn tác.')) {
+                    return;
+                }
+                
+                state.progress = {}; 
+                state.stats = {
+                    streak: 0,
+                    lastStudyDate: null,
+                    totalLearned: 0,
+                    timeSpent: 0
+                };
+                
+                app.saveProgress();
+                app.calculateDueCards();
+                ui.render();
+                ui.renderStats();
+                alert('Tiến độ học đã được thiết lập lại thành công!');
+                toggleView('learn');
+            },
         };
 
         // --- ADMIN / API LOGIC ---
         const admin = {
-			// --- LOGIN: Lấy token ---
-			login: async () => {
-				const u = document.getElementById('api-user').value.trim();
-				const p = document.getElementById('api-pass').value.trim();
-				const url = document.getElementById('api-url').value.trim();
+            login: async () => {
+                const u = document.getElementById('api-user').value.trim();
+                const p = document.getElementById('api-pass').value.trim();
+                const url = document.getElementById('api-url').value.trim();
 
-				if (!url || !u || !p) {
-					alert("Vui lòng nhập đầy đủ URL, Username và Password!");
-					return;
-				}
+                if (!url || !u || !p) {
+                    alert("Vui lòng nhập đầy đủ URL, Username và Password!");
+                    return;
+                }
 
-				try {
-					ui.showLoading(true);
-					// Cấu trúc: GET ?action=login&username=...&password=...
-					const endpoint = `${url}?action=login&username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`;
-					
-					const response = await fetch(endpoint);
-					const result = await response.json();
+                try {
+                    ui.showLoading(true);
+                    const endpoint = `${url}?action=login&username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`;
+                    const response = await fetch(endpoint);
+                    const result = await response.json();
 
-					if (result.success) {
-						// LƯU TOKEN VÀO STATE VÀ LOCALSTORAGE
-						state.settings.username = result.data.username;
-						state.settings.token = result.data.token;
-						state.settings.apiUrl = url;
-
-						localStorage.setItem('srs_settings', JSON.stringify(state.settings));
-						
-						admin.setLoggedInState(true);
-						
-						// Tải lại dữ liệu thẻ sau khi login
-						await app.loadCards(); 
+                    if (result.success) {
+                        state.settings.username = result.data.username;
+                        state.settings.token = result.data.token;
+                        state.settings.apiUrl = url;
+                        localStorage.setItem('srs_settings', JSON.stringify(state.settings));
+                        admin.setLoggedInState(true);
+                        await app.loadCards(); 
 						admin.renderCardList();
-						
-						alert("Đăng nhập thành công!");
-					} else {
-						alert("Đăng nhập thất bại: " + (result.message || "Lỗi không xác định"));
-					}
-				} catch (e) {
-					console.error(e);
-					alert("Lỗi kết nối đến server login!");
-				} finally {
-					ui.showLoading(false);
-				}
-			},
+                        alert("Đăng nhập thành công!");  
+                    } else {
+                        alert("Đăng nhập thất bại: " + (result.message || "Lỗi không xác định"));
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Lỗi kết nối đến server login!");
+                } finally {
+                    ui.showLoading(false);
+                }
+            },
+            logout: () => {
+                if(confirm("Bạn muốn đăng xuất?")) {
+                    state.settings.token = null;
+                    state.settings.username = null;
+                    localStorage.setItem('srs_settings', JSON.stringify(state.settings));
+                    admin.setLoggedInState(false);
+                    location.reload(); 
+                }
+            },
+            setLoggedInState: (isLoggedIn) => {
+                const form = document.getElementById('login-form');
+                const loggedView = document.getElementById('logged-in-view');
+                const manager = document.getElementById('card-manager');
+                
+                if (isLoggedIn) {
+                    form.classList.add('hidden');
+                    loggedView.classList.remove('hidden');
+                    manager.classList.remove('opacity-50', 'pointer-events-none');
+                    loggedView.querySelector('p').innerHTML = `<i class="fas fa-check-circle"></i> Xin chào, <b>${state.settings.username}</b>`;
+                } else {
+                    form.classList.remove('hidden');
+                    loggedView.classList.add('hidden');
+                    manager.classList.add('opacity-50', 'pointer-events-none');
+                }
+            },
 
-			logout: () => {
-				if(confirm("Bạn muốn đăng xuất?")) {
-					state.settings.token = null;
-					state.settings.username = null;
-					localStorage.setItem('srs_settings', JSON.stringify(state.settings));
-					admin.setLoggedInState(false);
-					location.reload(); // Reload để reset trạng thái
-				}
-			},
+            // NEW: Renders the category list table (Chỉ để xem và xóa)
+            renderCategoryManager: () => {
+                const tableContainer = document.getElementById('category-manager-table');
+                if (!tableContainer) return;
+                
+                // Lấy danh sách duy nhất các category đã được tạo
+                const uniqueCategories = new Set(Object.values(state.cardCategoryMap).filter(c => c));
+                
+                let html = `
+                    <div class="flex p-3 border-b font-bold text-xs text-gray-600 bg-gray-100">
+                        <span class="flex-1">Tên Nhóm (${uniqueCategories.size} nhóm)</span>
+                        <span class="w-16 text-right">Thao tác</span>
+                    </div>
+                `;
 
-			setLoggedInState: (isLoggedIn) => {
-				const form = document.getElementById('login-form');
-				const loggedView = document.getElementById('logged-in-view');
-				const manager = document.getElementById('card-manager');
-				
-				if (isLoggedIn) {
-					form.classList.add('hidden');
-					loggedView.classList.remove('hidden');
-					// Mở khóa chức năng quản lý thẻ
-					manager.classList.remove('opacity-50', 'pointer-events-none');
-					// Hiển thị tên user
-					loggedView.querySelector('p').innerHTML = `<i class="fas fa-check-circle"></i> Xin chào, <b>${state.settings.username}</b>`;
-				} else {
-					form.classList.remove('hidden');
-					loggedView.classList.add('hidden');
-					manager.classList.add('opacity-50', 'pointer-events-none');
-				}
-			},
+                if (uniqueCategories.size === 0) {
+                    html += '<p class="p-3 text-center text-gray-400 text-sm">Chưa có nhóm thẻ tùy chỉnh nào.</p>';
+                } else {
+                    uniqueCategories.forEach(categoryName => {
+                        // Sanitize category name for function call
+                        const safeName = categoryName.replace(/'/g, "\\'");
+                        
+                        html += `
+                            <div class="flex p-3 items-center bg-white border-b last:border-0">
+                                <span class="flex-1 font-medium">${categoryName}</span>
+                                <div class="w-16 flex gap-2 justify-end">
+                                    <button onclick="admin.deleteCategory('${safeName}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i> Xóa</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
 
-			// --- RENDER LIST ---
-			renderCardList: () => {
-				const list = document.getElementById('admin-card-list');
-				if(!state.cards || state.cards.length === 0) {
-					list.innerHTML = '<p class="text-center text-gray-400 p-4">Chưa có thẻ nào.</p>';
+                tableContainer.innerHTML = html;
+            },
+
+            // NEW: Renders dropdown for studying category
+            renderCategoryFilter: () => {
+                const filterSelect = document.getElementById('study-category-filter');
+                if (!filterSelect) return;
+                
+                const uniqueCategories = new Set(Object.values(state.cardCategoryMap).filter(c => c));
+                
+                filterSelect.innerHTML = '<option value="all">Tất cả Thẻ (Mặc định)</option>';
+                
+                uniqueCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.text = category;
+                    filterSelect.appendChild(option);
+                });
+                
+                filterSelect.value = state.selectedCategory || 'all';
+            },
+
+            // NEW: Selects category for study queue
+            selectStudyCategory: (categoryName) => {
+                state.selectedCategory = categoryName;
+                app.saveProgress(); 
+                app.calculateDueCards();
+                ui.render();
+                toggleView('learn'); 
+            },
+
+            // NEW: Deletes a category and unassigns all associated cards
+            deleteCategory: (name) => {
+                if (!confirm(`Bạn có chắc chắn muốn xóa nhóm thẻ "${name}"? Các thẻ thuộc nhóm này sẽ trở về trạng thái chưa phân loại.`)) {
+                    return;
+                }
+                
+                // Xóa tất cả các card thuộc nhóm này khỏi bản đồ
+                Object.keys(state.cardCategoryMap).forEach(cardId => {
+                    if (state.cardCategoryMap[cardId] === name) {
+                        delete state.cardCategoryMap[cardId];
+                    }
+                });
+
+                // Reset filter nếu người dùng đang chọn nhóm này
+                if (state.selectedCategory === name) {
+                    state.selectedCategory = 'all';
+                }
+
+                app.saveProgress();
+                admin.renderCategoryManager();
+                admin.renderCategoryFilter();
+                app.calculateDueCards();
+                admin.renderCardList(); // Render lại danh sách để cập nhật trạng thái phân loại
+                alert(`Nhóm thẻ "${name}" đã được xóa.`);
+            },
+            
+            // BATCH ASSIGNMENT LOGIC
+            
+            // NEW: Lấy danh sách ID của các thẻ đã chọn
+            getSelectedCardIds: () => {
+                const checkboxes = document.querySelectorAll('#admin-card-list .card-select-checkbox:checked');
+                return Array.from(checkboxes).map(cb => cb.dataset.cardId);
+            },
+
+            // NEW: Cập nhật trạng thái Action Bar
+            updateActionBar: () => {
+                const selectedIds = admin.getSelectedCardIds();
+                const count = selectedIds.length;
+                const bar = document.getElementById('batch-action-bar');
+                const selectAll = document.getElementById('select-all-cards');
+
+                document.getElementById('selected-count').innerText = `Đã chọn: ${count} thẻ`;
+
+                if (count > 0) {
+                    bar.classList.remove('translate-y-full');
+                } else {
+                    bar.classList.add('translate-y-full');
+                }
+
+                // Cập nhật nút "Chọn Tất Cả"
+                const totalCards = state.cards.length;
+                if (totalCards > 0) {
+                    selectAll.checked = count === totalCards;
+                    // Indeterminate state: nếu chọn 1 phần
+                    selectAll.indeterminate = (count > 0 && count < totalCards);
+                } else {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = false;
+                }
+            },
+
+            // NEW: Chọn/Bỏ chọn tất cả thẻ
+            toggleSelectAllAdmin: (checked) => {
+                const checkboxes = document.querySelectorAll('#admin-card-list .card-select-checkbox');
+                checkboxes.forEach(cb => {
+                    cb.checked = checked;
+                });
+                admin.updateActionBar();
+            },
+
+            // NEW: Mở Modal Gán Nhóm Hàng Loạt (ĐÃ SỬA LỖI)
+			openBatchCategoryModal: () => {
+				const selectedIds = admin.getSelectedCardIds();
+				if (selectedIds.length === 0) {
+					alert("Vui lòng chọn ít nhất một thẻ để gán nhóm.");
 					return;
 				}
-				list.innerHTML = state.cards.map(c => `
-					<div class="p-3 flex justify-between items-center bg-gray-50 hover:bg-white border-b last:border-0">
-						<div class="truncate pr-4">
-							<span class="font-bold text-indigo-700">${c.kanji}</span>
-							<span class="text-xs text-gray-500 block truncate">${c.meaning}</span>
-						</div>
-						<div class="flex gap-3 shrink-0">
-							<button onclick="admin.openEditModal('${c.id}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
-							<button onclick="admin.deleteCard('${c.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-						</div>
-					</div>
-				`).join('');
-			},
 
-			openEditModal: (id = null) => {
-				const modal = document.getElementById('modal-edit');
-				document.getElementById('edit-id').value = id || '';
+				const modal = document.getElementById('modal-batch-assign');
+				const select = document.getElementById('batch-category-select');
+				const newCatInput = document.getElementById('new-category-name'); // Lấy biến input
 				
-				if (id) {
-					const c = state.cards.find(x => x.id == id); // Dùng == để so sánh cả string/number
-					if(c) {
-						document.getElementById('modal-title').innerText = 'Sửa thẻ';
-						document.getElementById('edit-kanji').value = c.kanji;
-						document.getElementById('edit-kana').value = c.kana;
-						document.getElementById('edit-meaning').value = c.meaning;
-						document.getElementById('edit-example').value = c.example;
-					}
+				// Lấy danh sách nhóm thẻ
+				const uniqueCategories = new Set(Object.values(state.cardCategoryMap).filter(c => c));
+
+				// Cập nhật thông tin và dropdown
+				document.getElementById('batch-assign-info').innerHTML = `Bạn đang gán nhóm cho **${selectedIds.length}** thẻ.`;
+				newCatInput.value = '';
+				
+				// Đảm bảo dropdown trở về giá trị mặc định khi mở
+				select.innerHTML = '<option value="NEW_CATEGORY">-- Tạo Nhóm Thẻ Mới --</option>';
+				
+				uniqueCategories.forEach(category => {
+					const option = document.createElement('option');
+					option.value = category;
+					option.text = category;
+					select.appendChild(option);
+				});
+				
+				// VỊ TRÍ SỬA LỖI: Hiển thị ô input nếu tùy chọn mặc định được chọn
+				if (select.value === 'NEW_CATEGORY') {
+					newCatInput.classList.remove('hidden');
 				} else {
-					document.getElementById('modal-title').innerText = 'Thêm thẻ mới';
-					// Reset form
-					document.querySelectorAll('#modal-edit input:not([type=hidden])').forEach(i => i.value = '');
+					newCatInput.classList.add('hidden');
 				}
+
+				// Xử lý sự kiện khi chọn "Tạo Nhóm Thẻ Mới"
+				select.onchange = (e) => {
+					if (e.target.value === 'NEW_CATEGORY') {
+						newCatInput.classList.remove('hidden');
+					} else {
+						newCatInput.classList.add('hidden');
+					}
+				};
+				
 				modal.classList.remove('hidden');
 			},
 
-			// --- ADD / UPDATE (Dùng Token) ---
-			saveCard: async () => {
-				const id = document.getElementById('edit-id').value;
-				const apiUrl = state.settings.apiUrl;
-				const token = state.settings.token;
+            // NEW: Lưu việc Gán Nhóm Hàng Loạt
+            saveBatchAssignment: () => {
+                const selectedIds = admin.getSelectedCardIds();
+                const select = document.getElementById('batch-category-select');
+                const newNameInput = document.getElementById('new-category-name');
+                const assignmentMode = document.querySelector('input[name="assignment-mode"]:checked').value;
+                
+                let categoryToAssign = select.value;
 
-				if (!token) {
-					alert("Bạn chưa đăng nhập hoặc phiên làm việc hết hạn!");
-					return;
-				}
+                // 1. Xác định tên nhóm mới
+                if (categoryToAssign === 'NEW_CATEGORY') {
+                    categoryToAssign = newNameInput.value.trim();
+                    if (!categoryToAssign) {
+                        alert("Vui lòng nhập tên nhóm mới!");
+                        return;
+                    }
+                }
+                
+                // 2. Thực hiện gán (chế độ thay thế)
+                selectedIds.forEach(cardId => {
+                    if (assignmentMode === 'replace') {
+                        state.cardCategoryMap[cardId] = categoryToAssign;
+                    }
+                    // Mode 'add' hiện tại đang disabled, có thể bỏ qua
+                });
 
-				const payload = {
-					token: token,
-					kanji: document.getElementById('edit-kanji').value,
-					kana: document.getElementById('edit-kana').value,
-					meaning: document.getElementById('edit-meaning').value,
-					example: document.getElementById('edit-example').value
-				};
+                // 3. Reset UI và Lưu
+                admin.toggleSelectAllAdmin(false); // Bỏ chọn tất cả
+                app.saveProgress();
+                app.calculateDueCards();
+                admin.renderCardList(); // Render lại danh sách để thấy nhóm mới
+                admin.renderCategoryManager(); // Render lại danh sách nhóm quản lý
+                document.getElementById('modal-batch-assign').classList.add('hidden');
+                alert(`Đã gán thành công ${selectedIds.length} thẻ vào nhóm "${categoryToAssign}"!`);
+            },
+            
+            // UPDATED: renderCardList (Thêm checkbox)
+            renderCardList: () => {
+                const list = document.getElementById('admin-card-list');
+                
+                // Tái tạo lại danh sách thẻ đã chọn (selected cards) dựa trên state
+                const selectedCardIds = admin.getSelectedCardIds();
+                
+                if(!state.cards || state.cards.length === 0) {
+                    list.innerHTML = '<p class="text-center text-gray-400 p-4">Chưa có thẻ nào.</p>';
+                    admin.renderCategoryFilter();
+                    admin.renderCategoryManager();
+                    admin.updateActionBar();
+                    return;
+                }
+                
+                admin.renderCategoryFilter();
+                admin.renderCategoryManager();
 
-				// Xác định Action là Add hay Update
-				if (id) {
-					payload.action = 'updateFlashCard';
-					payload.id = id;
-				} else {
-					payload.action = 'addFlashCard';
-				}
+                list.innerHTML = state.cards.map(c => {
+                    const isSelected = selectedCardIds.includes(c.id);
+                    const currentCategory = state.cardCategoryMap[c.id] ? `(<span class="text-xs text-indigo-500">${state.cardCategoryMap[c.id]}</span>)` : '';
+                    
+                    return `
+                        <div class="flex p-3 items-center bg-gray-50 hover:bg-white border-b last:border-0 card-row" data-card-id="${c.id}">
+                            <input 
+                                type="checkbox" 
+                                class="card-select-checkbox h-4 w-4 rounded border-gray-300 text-indigo-600 mr-3" 
+                                data-card-id="${c.id}"
+                                onchange="admin.updateActionBar()"
+                                ${isSelected ? 'checked' : ''}
+                            >
+                            
+                            <div class="flex-1 truncate pr-4">
+                                <span class="font-bold text-indigo-700">${c.kanji}</span>
+                                <span class="text-xs text-gray-500 block truncate">${c.meaning} ${currentCategory}</span>
+                            </div>
+                            
+                            <div class="w-20 flex gap-3 justify-end shrink-0">
+                                <button onclick="admin.openEditModal('${c.id}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                                <button onclick="admin.deleteCard('${c.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                admin.updateActionBar();
+            },
 
-				try {
-					ui.showLoading(true);
-					// Gửi request POST JSON
-					const response = await fetch(apiUrl, {
-						method: 'POST',
-						//headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify(payload)
-					});
+            openEditModal: (id = null) => {
+                const modal = document.getElementById('modal-edit');
+                document.getElementById('edit-id').value = id || '';
+                
+                if (id) {
+                    const c = state.cards.find(x => x.id == id);
+                    if(c) {
+                        document.getElementById('modal-title').innerText = 'Sửa thẻ';
+                        document.getElementById('edit-kanji').value = c.kanji;
+                        document.getElementById('edit-kana').value = c.kana;
+                        document.getElementById('edit-meaning').value = c.meaning;
+                        document.getElementById('edit-example').value = c.example;
+                    }
+                } else {
+                    document.getElementById('modal-title').innerText = 'Thêm thẻ mới';
+                    document.querySelectorAll('#modal-edit input:not([type=hidden])').forEach(i => i.value = '');
+                }
+                modal.classList.remove('hidden');
+            },
 
-					const result = await response.json();
+            saveCard: async () => {
+                const id = document.getElementById('edit-id').value;
+                const apiUrl = state.settings.apiUrl;
+                const token = state.settings.token;
 
-					if (result.success) {
-						// Load lại danh sách mới nhất từ server để đồng bộ
-						await app.loadCards();
-						
-						document.getElementById('modal-edit').classList.add('hidden');	
+                if (!token) {
+                    alert("Bạn chưa đăng nhập hoặc phiên làm việc hết hạn!");
+                    return;
+                }
+
+                const payload = {
+                    token: token,
+                    kanji: document.getElementById('edit-kanji').value,
+                    kana: document.getElementById('edit-kana').value,
+                    meaning: document.getElementById('edit-meaning').value,
+                    example: document.getElementById('edit-example').value
+                };
+
+                if (id) {
+                    payload.action = 'updateFlashCard';
+                    payload.id = id;
+                } else {
+                    payload.action = 'addFlashCard';
+                }
+
+                try {
+                    ui.showLoading(true);
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        //headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        await app.loadCards();
 						alert(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
-					} else {
-						alert("Lỗi: " + result.message);
-					}
-				} catch (e) {
-					console.error(e);
-					alert("Lỗi kết nối khi lưu thẻ!");
-				} finally {
-					ui.showLoading(false);
-				}
-			},
+                        document.getElementById('modal-edit').classList.add('hidden');
+                        
+                    } else {
+                        alert("Lỗi: " + result.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Lỗi kết nối khi lưu thẻ!");
+                } finally {
+                    ui.showLoading(false);
+                }
+            },
 
-			// --- DELETE (Dùng Token) ---
-			deleteCard: async (id) => {
-				if(!confirm('Bạn chắc chắn muốn xóa thẻ này?')) return;
-				
-				const apiUrl = state.settings.apiUrl;
-				const token = state.settings.token;
+            deleteCard: async (id) => {
+                if(!confirm('Bạn chắc chắn muốn xóa thẻ này?')) return;
+                
+                const apiUrl = state.settings.apiUrl;
+                const token = state.settings.token;
 
-				if (!token) {
-					alert("Lỗi token! Vui lòng đăng nhập lại.");
-					return;
-				}
+                if (!token) {
+                    alert("Lỗi token! Vui lòng đăng nhập lại.");
+                    return;
+                }
 
-				try {
-					ui.showLoading(true);
-					
-					const payload = {
-						action: 'deleteFlashCard',
-						token: token,
-						id: id
-					};
+                try {
+                    ui.showLoading(true);
+                    const payload = {
+                        action: 'deleteFlashCard',
+                        token: token,
+                        id: id
+                    };
 
-					const response = await fetch(apiUrl, {
-						method: 'POST',
-						//headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify(payload)
-					});
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        //headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
 
-					const result = await response.json();
+                    const result = await response.json();
 
-					if (result.success) {
-						// Xóa thành công thì load lại data
-						await app.loadCards();
-					} else {
-						alert("Không thể xóa: " + result.message);
-					}
-				} catch (e) {
-					console.error(e);
-					alert("Lỗi kết nối khi xóa thẻ!");
-				} finally {
-					ui.showLoading(false);
-				}
-			}
-		};
+                    if (result.success) {
+                        // Remove from category map if it was assigned
+                        delete state.cardCategoryMap[id];
+                        await app.loadCards();
+                    } else {
+                        alert("Không thể xóa: " + result.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Lỗi kết nối khi xóa thẻ!");
+                } finally {
+                    ui.showLoading(false);
+                }
+            }
+        };
 
         // --- UI & INTERACTIONS ---
         const ui = {
@@ -580,23 +963,19 @@
                 }
                 ui.hideEmptyState();
 
-                // Render top 3 cards only (Performance)
                 const toRender = state.dueCards.slice(0, 3).reverse(); 
                 
                 toRender.forEach((card, index) => {
-                    const realIndex = state.dueCards.indexOf(card);
                     const el = document.createElement('div');
                     el.className = 'flashcard shadow-xl';
                     
-                    // Card Stacking Effect
-                    const offset = (toRender.length - 1 - index) * 10; // 0, 10, 20
+                    const offset = (toRender.length - 1 - index) * 10;
                     const scale = 1 - (toRender.length - 1 - index) * 0.05;
                     
                     el.style.top = `${offset}px`;
                     el.style.zIndex = index;
                     el.style.transform = `scale(${scale})`;
                     
-                    // Content
                     el.innerHTML = `
                         <div class="status-badge status-again text-2xl border-4">LẠI</div>
                         <div class="status-badge status-good text-2xl border-4">TỐT</div>
@@ -614,7 +993,6 @@
                         </div>
                     `;
 
-                    // Top card gets event listeners
                     if (index === toRender.length - 1) {
                         ui.attachTouchEvents(el);
                         el.onclick = () => {
@@ -630,29 +1008,25 @@
             attachTouchEvents: (card) => {
                 let startX, startY, currentX, currentY;
                 let isDragging = false;
-                const threshold = 100; // px to trigger
-                const screenW = window.innerWidth;
+                const threshold = 100;
 
                 const onMove = (e) => {
                     if (!isDragging) return;
-                    e.preventDefault(); // Prevent scrolling
+                    e.preventDefault(); 
                     
                     const touch = e.touches[0];
                     currentX = touch.clientX - startX;
                     currentY = touch.clientY - startY;
                     
-                    // Logic: Rotation based on X
                     const rotate = currentX * 0.05;
                     
-                    // Status Opacity Logic
                     const againOp = Math.max(0, -currentX / (threshold*1.5));
                     const goodOp = Math.max(0, currentX / (threshold*1.5));
-                    const easyOp = Math.max(0, -currentY / (threshold*1.5)); // Swipe Up
+                    const easyOp = Math.max(0, -currentY / (threshold*1.5));
                     
                     card.querySelector('.status-again').style.opacity = againOp;
                     card.querySelector('.status-good').style.opacity = goodOp;
                     
-                    // Priority for Easy (Up)
                     if (currentY < -50 && Math.abs(currentX) < 50) {
                          card.querySelector('.status-easy').style.opacity = easyOp;
                          card.style.transform = `translate(0px, ${currentY}px)`;
@@ -665,18 +1039,13 @@
                     if (!isDragging) return;
                     isDragging = false;
                     
-                    // Detect Swipe Direction
                     if (currentY < -threshold && Math.abs(currentX) < 80) {
-                        // Swipe Up -> Easy
                         app.handleAnswer('easy');
                     } else if (currentX > threshold) {
-                        // Swipe Right -> Good
                         app.handleAnswer('good');
                     } else if (currentX < -threshold) {
-                        // Swipe Left -> Again
                         app.handleAnswer('again');
                     } else {
-                        // Reset
                         card.style.transform = `translate(0px, 0px) scale(1)`;
                         card.querySelectorAll('.status-badge').forEach(b => b.style.opacity = 0);
                     }
@@ -703,7 +1072,7 @@
                 if (direction === 'again') { x = -500; rot = -30; }
                 if (direction === 'good') { x = 500; rot = 30; }
                 if (direction === 'easy') { y = -500; }
-                if (direction === 'hard') { y = 500; } // Fallback for button
+                if (direction === 'hard') { y = 500; }
 
                 card.style.transition = 'transform 0.4s ease, opacity 0.4s';
                 card.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
@@ -715,6 +1084,8 @@
                 document.getElementById('controls').classList.add('opacity-0', 'pointer-events-none');
                 document.getElementById('empty-state').classList.remove('hidden');
                 document.getElementById('empty-state').classList.add('flex');
+                
+                document.getElementById('current-category-name').innerText = (state.selectedCategory === 'all' ? 'Tất cả' : state.selectedCategory);
             },
             hideEmptyState: () => {
                 document.getElementById('card-stack').classList.remove('hidden');
@@ -736,33 +1107,79 @@
                 const percent = total > 0 ? (learned / total) * 100 : 0;
                 document.getElementById('progress-bar').style.width = `${percent}%`;
             },
-			
-			showLoading: (isLoading) => {
-				// Có thể thêm một spinner overlay vào HTML và toggle class hidden ở đây
-				const btn = document.querySelector('button[onclick="app.loadCards()"]');
-				if(btn) btn.innerText = isLoading ? "Đang tải..." : "Reload từ API";
-				
-				const overlay = document.getElementById('loading-overlay');
-				if (!overlay) return;
+            
+            renderDetailedStats: () => {
+                const total = state.cards.length;
+                const learned = Object.keys(state.progress).length;
+                const retentionRate = total > 0 ? Math.round((learned / total) * 100) : 0;
+                
+                document.getElementById('stat-total-learned').innerText = learned.toLocaleString();
+                document.getElementById('stat-time-spent').innerText = Math.round(state.stats.timeSpent).toLocaleString();
+                document.getElementById('stat-retention').innerText = `${retentionRate}%`;
+                document.getElementById('stat-streak').innerText = `${state.stats.streak} Ngày`;
+                
+                const dueContainer = document.getElementById('due-list-container');
+                const now = Date.now();
+                
+                const futureDueCards = state.cards
+                    .map(card => ({
+                        ...card,
+                        prog: state.progress[card.id],
+                        category: state.cardCategoryMap[card.id] || 'Chưa phân loại'
+                    }))
+                    .filter(item => item.prog && item.prog.nextReview > now && (state.selectedCategory === 'all' || item.category === state.selectedCategory))
+                    .sort((a, b) => a.prog.nextReview - b.prog.nextReview); 
 
-				if (isLoading) {
-					overlay.classList.remove('hidden');
-				} else {
-					// Thêm chút delay nhỏ để trải nghiệm mượt hơn (tránh nháy màn hình nếu load quá nhanh)
-					setTimeout(() => {
-						overlay.classList.add('hidden');
-					}, 300);
-				}
-			}
+                if (futureDueCards.length === 0) {
+                    dueContainer.innerHTML = '<p class="text-gray-400 text-sm italic p-2">Không có thẻ nào cần ôn tập trong tương lai gần trong nhóm học hiện tại.</p>';
+                    return;
+                }
+                
+                dueContainer.innerHTML = futureDueCards.slice(0, 10).map(item => {
+                    const nextReviewDate = new Date(item.prog.nextReview);
+                    const dateStr = nextReviewDate.toLocaleDateString('vi-VN', { 
+                        weekday: 'short', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                    });
+                    
+                    return `
+                        <div class="flex justify-between items-center py-2 border-b last:border-0">
+                            <span class="font-medium text-gray-800">${item.kanji} (${item.meaning})</span>
+                            <span class="text-sm text-indigo-600 font-bold">${dateStr}</span>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            showLoading: (isLoading) => {
+                const overlay = document.getElementById('loading-overlay');
+                if (!overlay) return;
+
+                if (isLoading) {
+                    overlay.classList.remove('hidden');
+                } else {
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                    }, 300);
+                }
+            }
         };
 
-        // Helper to switch views
+        // Helper functions
         function toggleView(viewName) {
             const adminPanel = document.getElementById('view-admin');
             if (viewName === 'admin') {
                 adminPanel.classList.remove('translate-y-full');
             } else {
                 adminPanel.classList.add('translate-y-full');
+            }
+        }
+        function toggleStats(show) {
+            const modal = document.getElementById('modal-stats');
+            if (show) {
+                ui.renderDetailedStats();
+                modal.classList.remove('translate-y-full');
+            } else {
+                modal.classList.add('translate-y-full');
             }
         }
 
