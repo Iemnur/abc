@@ -117,8 +117,21 @@
             
             <section class="bg-white p-4 rounded-xl border shadow-sm">
                 <h3 class="font-bold text-gray-700 mb-3"><i class="fas fa-link mr-2"></i>API Configuration</h3>
-                <input type="text" id="api-url" placeholder="Endpoint URL (e.g., example.com/api)" class="w-full p-2 border rounded mb-2 text-sm">
-                
+                <div class="space-y-3 mb-4">
+					<input 
+						type="text" 
+						id="api-url" 
+						class="w-full p-2 border rounded-lg text-sm" 
+						placeholder="Nhập URL API Endpoint (ví dụ: https://yourserver.com/api)"
+					>
+					<button 
+						onclick="admin.updateApiEndpoint()" 
+						class="w-full bg-green-600 text-white p-2 rounded-lg font-bold hover:bg-green-700 transition"
+					>
+						<i class="fas fa-upload mr-1"></i> Cập nhật API Endpoint
+					</button>
+				</div>
+				
                 <div id="login-form">
                     <input type="text" id="api-user" placeholder="Username" class="w-full p-2 border rounded mb-2 text-sm">
                     <input type="password" id="api-pass" placeholder="Password" class="w-full p-2 border rounded mb-2 text-sm">
@@ -132,21 +145,21 @@
             </section>
 
             <section class="bg-white p-4 rounded-xl border shadow-sm">
-                <h3 class="font-bold text-indigo-700 mb-3"><i class="fas fa-layer-group mr-2"></i>Quản lý Nhóm Thẻ</h3>
-                
-                <p class="text-sm text-gray-500 mb-2">Chọn nhóm thẻ muốn ôn tập:</p>
-                <select id="study-category-filter" onchange="admin.selectStudyCategory(this.value)" class="w-full p-2 border rounded text-sm bg-white mb-4">
-                    <option value="all">Tất cả Thẻ (Mặc định)</option>
-                </select>
+				<h3 class="font-bold text-indigo-700 mb-3"><i class="fas fa-layer-group mr-2"></i>Quản lý Nhóm Thẻ</h3>
+				
+				<p class="text-sm text-gray-500 mb-2">Chọn nhóm thẻ muốn ôn tập:</p>
+				<select id="study-category-filter" onchange="admin.selectStudyCategory(this.value)" class="w-full p-2 border rounded text-sm bg-white mb-4">
+					<option value="all">Tất cả Thẻ (Mặc định)</option>
+				</select>
 
-                <h4 class="font-bold text-gray-600 mb-2">Các nhóm thẻ tùy chỉnh</h4>
-                <div id="category-manager-table" class="border rounded-lg overflow-hidden">
-                    </div>
+				<h4 class="font-bold text-gray-600 mb-2">Các nhóm thẻ tùy chỉnh</h4>
+				<div id="category-manager-table" class="border rounded-lg overflow-hidden">
+					</div>
 
-                <button onclick="admin.openBatchCategoryModal()" class="mt-4 w-full bg-indigo-500 text-white p-2 rounded font-bold hover:bg-indigo-600 transition">
-                    <i class="fas fa-plus mr-1"></i> Quản lý nhóm thẻ (Gán/Xóa)
-                </button>
-            </section>
+				<button onclick="toggleView('card-admin')" class="mt-4 w-full bg-indigo-500 text-white p-2 rounded font-bold hover:bg-indigo-700 transition">
+					<i class="fas fa-database mr-1"></i> Chuyển sang Quản lý Thẻ
+				</button>
+			</section>
             
             <section class="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm">
                 <h3 class="font-bold text-red-700 mb-3"><i class="fas fa-redo-alt mr-2"></i>Reset Tiến độ Học</h3>
@@ -157,85 +170,100 @@
             </section>
 
             <hr class="my-6 border-gray-200">
-
-            <section id="card-manager" class="bg-white p-4 rounded-xl border shadow-sm opacity-50 pointer-events-none transition-opacity relative">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-gray-700"><i class="fas fa-database mr-2"></i>Quản lý thẻ</h3>
-                    <button onclick="admin.openEditModal()" class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm mới</button>
-                </div>
-                
-                <div class="flex p-3 border-b font-bold text-xs text-gray-600 bg-gray-100 rounded-t-lg">
-                    <input type="checkbox" id="select-all-cards" onclick="admin.toggleSelectAllAdmin(this.checked)" class="h-4 w-4 rounded border-gray-300 text-indigo-600 mr-3">
-                    <span class="flex-1">Thẻ (Kanji/Nghĩa)</span>
-                    <span class="w-20 text-right">Hành động</span>
-                </div>
-                
-                <div id="admin-card-list" class="max-h-96 overflow-y-auto border-x border-b rounded-b-lg divide-y">
-                    </div>
-                <button onclick="app.loadCards()" class="mt-2 w-full text-indigo-600 text-sm font-bold">Reload từ API</button>
-
-                <div id="batch-action-bar" class="fixed bottom-0 left-0 right-0 p-4 bg-indigo-600 text-white shadow-2xl z-50 transform translate-y-full transition-transform duration-300 flex justify-between items-center sm:max-w-xl sm:mx-auto sm:rounded-t-xl">
-                    <span id="selected-count" class="font-bold">Đã chọn: 0 thẻ</span>
-                    <button onclick="admin.openBatchCategoryModal()" class="bg-white text-indigo-600 py-2 px-4 rounded-lg font-bold hover:bg-gray-100 transition">
-                        <i class="fas fa-tags mr-1"></i> Gán Nhóm
-                    </button>
-                </div>
-            </section>
         </div>
     </div>
+	
+	<div id="view-card-admin" class="fixed inset-0 bg-white z-50 transform translate-y-full transition-transform duration-300 flex flex-col">
+		<div class="p-4 border-b flex justify-between items-center bg-gray-50">
+			<h2 class="font-bold text-lg"><i class="fas fa-database mr-2"></i>Quản lý Thẻ</h2>
+			<button onclick="toggleView('admin')" class="p-2 text-gray-500"><i class="fas fa-arrow-left fa-lg"></i> Trở về Cài đặt</button>
+		</div>
+		
+		<div class="flex-1 overflow-y-auto p-4 space-y-6">
+			<section class="bg-white p-4 rounded-xl border shadow-sm relative">
+				<div class="flex justify-between items-center mb-4">
+					<h3 class="font-bold text-gray-700" id="card-admin-title">Danh sách Thẻ</h3>
+					<button onclick="admin.openEditModal()" class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow hover:bg-indigo-700 transition">
+						+ Thêm mới
+					</button>
+				</div>
+				
+				<div class="flex gap-3 mb-4">
+					<input 
+						type="text" 
+						id="admin-search-input" 
+						oninput="admin.renderCardList()" 
+						class="flex-1 p-2 border rounded-lg text-sm" 
+						placeholder="Tìm kiếm theo Kanji, Kana hoặc Nghĩa..."
+					>
+					<select id="admin-sort-by" onchange="admin.renderCardList()" class="p-2 border rounded-lg text-sm w-40 bg-white">
+						<option value="default">Sắp xếp (Mặc định)</option>
+						<option value="kanji_asc">Kanji (A-Z)</option>
+						<option value="kanji_desc">Kanji (Z-A)</option>
+						<option value="newest">Mới nhất</option>
+						<option value="oldest">Cũ nhất</option>
+					</select>
+				</div>
+				
+				<div class="flex p-3 border-b font-bold text-xs text-gray-600 bg-gray-100 rounded-t-lg">
+					<input type="checkbox" id="select-all-cards" onclick="admin.toggleSelectAllAdmin(this.checked)" class="h-4 w-4 rounded border-gray-300 text-indigo-600 mr-3">
+					<span class="flex-1">Thẻ (Kanji/Nghĩa/Nhóm)</span>
+					<span class="w-20 text-right">Hành động</span>
+				</div>
+				
+				<div id="admin-card-list" class="max-h-96 overflow-y-auto border-x border-b rounded-b-lg divide-y">
+					</div>
+				<button onclick="app.loadCards()" class="mt-4 w-full text-indigo-600 text-sm font-bold py-2 border rounded hover:bg-indigo-50 transition">Reload Thẻ</button>
+
+			</section>
+		</div>
+	</div>
+
+	<div id="batch-action-bar" class="fixed bottom-0 left-0 right-0 p-4 bg-indigo-600 text-white shadow-2xl z-50 transform translate-y-full transition-transform duration-300 flex justify-between items-center sm:max-w-xl sm:mx-auto sm:rounded-t-xl">
+		<span id="selected-count" class="font-bold">Đã chọn: 0 thẻ</span>
+		<button onclick="admin.openBatchCategoryModal()" class="bg-white text-indigo-600 py-2 px-4 rounded-lg font-bold hover:bg-gray-100 transition">
+			<i class="fas fa-tags mr-1"></i> Gán Nhóm
+		</button>
+	</div>
 
     <div id="modal-edit" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex justify-center items-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-xl">
-            <h3 class="font-bold text-lg mb-4" id="modal-title">Thêm thẻ mới</h3>
-            <input type="hidden" id="edit-id">
-            <div class="space-y-3">
-                <input id="edit-kanji" class="w-full p-2 border rounded" placeholder="Kanji (Ví dụ: 猫)">
-                <input id="edit-kana" class="w-full p-2 border rounded" placeholder="Kana (Ví dụ: ねこ)">
-                <input id="edit-meaning" class="w-full p-2 border rounded" placeholder="Nghĩa (Ví dụ: Con mèo)">
-                <textarea id="edit-example" class="w-full min-h-28 p-2 border rounded" placeholder="Ví dụ (Câu mẫu)"></textarea>
-            </div>
-            <div class="mt-5 flex gap-3">
-                <button onclick="document.getElementById('modal-edit').classList.add('hidden')" class="flex-1 py-2 bg-gray-100 rounded text-gray-600 font-bold">Hủy</button>
-                <button onclick="admin.saveCard()" class="flex-1 py-2 bg-indigo-600 rounded text-white font-bold">Lưu</button>
-            </div>
-        </div>
-    </div>
+		<div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-xl">
+			<h3 class="font-bold text-lg mb-4" id="modal-title">Thêm thẻ mới</h3>
+			<input type="hidden" id="edit-id">
+			<div class="space-y-3">
+				<input id="edit-kanji" class="w-full p-2 border rounded" placeholder="Kanji (Ví dụ: 猫)">
+				<input id="edit-kana" class="w-full p-2 border rounded" placeholder="Kana (Ví dụ: ねこ)">
+				<input id="edit-meaning" class="w-full p-2 border rounded" placeholder="Nghĩa (Ví dụ: Con mèo)">
+				<textarea id="edit-example" class="w-full p-2 border rounded h-24" placeholder="Ví dụ (Câu mẫu)"></textarea>
+			</div>
+			<div class="mt-5 flex gap-3">
+				<button onclick="document.getElementById('modal-edit').classList.add('hidden')" class="flex-1 py-2 bg-gray-100 rounded text-gray-600 font-bold">Hủy</button>
+				<button onclick="admin.saveCard()" class="flex-1 py-2 bg-indigo-600 rounded text-white font-bold">Lưu</button>
+			</div>
+		</div>
+	</div>
 
     <div id="modal-batch-assign" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex justify-center items-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-xl">
-            <h3 class="font-bold text-lg mb-4 text-indigo-700"><i class="fas fa-tags mr-2"></i>Gán Nhóm cho Thẻ Đã Chọn</h3>
-            <span id="batch-assign-info" class="block text-sm text-gray-600 mb-4">Bạn đang gán nhóm cho **X** thẻ.</span>
-            
-            <div class="space-y-4">
-                <div>
-                    <label for="batch-category-select" class="block text-sm font-medium text-gray-700 mb-1">Chọn Nhóm Thẻ:</label>
-                    <select id="batch-category-select" class="w-full p-2 border rounded text-sm bg-white">
-                        <option value="NEW_CATEGORY">-- Tạo Nhóm Thẻ Mới --</option>
-                        </select>
-                    <input type="text" id="new-category-name" class="w-full p-2 border rounded mt-2 hidden" placeholder="Nhập tên nhóm mới...">
-                </div>
-
-                <div class="pt-2 border-t">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Cách thức gán:</label>
-                    <div class="space-y-1">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="assignment-mode" value="replace" checked class="form-radio h-4 w-4 text-indigo-600">
-                            <span class="ml-2 text-sm text-gray-700">Thay thế nhóm hiện có (Xóa nhóm cũ, gán nhóm mới)</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="assignment-mode" value="add" disabled class="form-radio h-4 w-4 text-indigo-600">
-                            <span class="ml-2 text-sm text-gray-400">Thêm vào nhóm hiện có (Chưa hỗ trợ gán nhiều nhóm)</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-5 flex gap-3">
-                <button onclick="document.getElementById('modal-batch-assign').classList.add('hidden')" class="flex-1 py-2 bg-gray-100 rounded text-gray-600 font-bold">Hủy</button>
-                <button onclick="admin.saveBatchAssignment()" class="flex-1 py-2 bg-indigo-600 rounded text-white font-bold" id="save-batch-btn">Lưu Gán Nhóm</button>
-            </div>
-        </div>
-    </div>
+		<div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-xl">
+			<h3 class="font-bold text-lg mb-4 text-indigo-700"><i class="fas fa-tags mr-2"></i>Gán Nhóm cho Thẻ Đã Chọn</h3>
+			<span id="batch-assign-info" class="block text-sm text-gray-600 mb-4">Bạn đang gán nhóm cho **X** thẻ.</span>
+			
+			<div class="space-y-4">
+				<div>
+					<label for="batch-category-select" class="block text-sm font-medium text-gray-700 mb-1">Chọn Nhóm Thẻ:</label>
+					<select id="batch-category-select" class="w-full p-2 border rounded text-sm bg-white">
+						<option value="NEW_CATEGORY">-- Tạo Nhóm Thẻ Mới --</option>
+						</select>
+					<input type="text" id="new-category-name" class="w-full p-2 border rounded mt-2 hidden" placeholder="Nhập tên nhóm mới...">
+				</div>
+				</div>
+			
+			<div class="mt-5 flex gap-3">
+				<button onclick="document.getElementById('modal-batch-assign').classList.add('hidden')" class="flex-1 py-2 bg-gray-100 rounded text-gray-600 font-bold">Hủy</button>
+				<button onclick="admin.saveBatchAssignment()" class="flex-1 py-2 bg-indigo-600 rounded text-white font-bold" id="save-batch-btn">Lưu Gán Nhóm</button>
+			</div>
+		</div>
+	</div>
 
     <div id="modal-stats" class="fixed inset-0 bg-white z-50 transform translate-y-full transition-transform duration-300 flex flex-col">
         <div class="p-4 border-b flex justify-between items-center bg-indigo-50 text-indigo-800 shadow-sm">
@@ -279,6 +307,29 @@
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500 border-white mb-4"></div>
         <p class="text-white font-bold text-lg animate-pulse">Đang xử lý...</p>
     </div>
+	
+	<div id="custom-modal-backdrop" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex justify-center items-center p-6 transition-opacity duration-300 opacity-0">
+		<div id="custom-modal-content" class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl transform scale-95 transition-transform duration-300">
+			<h4 id="modal-title-custom" class="font-bold text-lg mb-3 text-gray-800">Thông Báo</h4>
+			<p id="modal-message-custom" class="text-sm text-gray-600 mb-6">Đây là nội dung của thông báo.</p>
+			
+			<input 
+				type="text" 
+				id="modal-input-custom" 
+				class="w-full p-2 border rounded-lg mb-4 hidden" 
+				placeholder="Nhập dữ liệu..."
+			>
+			
+			<div id="modal-actions-custom" class="flex justify-end gap-3">
+				<button id="modal-cancel-btn" class="py-2 px-4 bg-gray-200 rounded-lg text-gray-700 font-bold text-sm hover:bg-gray-300 transition hidden">
+					Hủy
+				</button>
+				<button id="modal-primary-btn" class="py-2 px-4 bg-indigo-600 rounded-lg text-white font-bold text-sm hover:bg-indigo-700 transition">
+					OK
+				</button>
+			</div>
+		</div>
+	</div>
 
     <script>
         // --- CONFIG & STATE ---
@@ -486,10 +537,9 @@
                 ui.render();
             },
             
-            resetProgress: () => {
-                if (!confirm('CẢNH BÁO! Bạn có chắc chắn muốn XÓA toàn bộ tiến độ học của mình không? Thao tác này không thể hoàn tác.')) {
-                    return;
-                }
+            resetProgress: async () => {
+				const confirmed = await ui.modal.confirm(`CẢNH BÁO! Bạn có chắc chắn muốn XÓA toàn bộ tiến độ học của mình không? Thao tác này không thể hoàn tác.`, 'Xóa Tiến Độ');
+				if (!confirmed) return;
                 
                 state.progress = {}; 
                 state.stats = {
@@ -503,7 +553,7 @@
                 app.calculateDueCards();
                 ui.render();
                 ui.renderStats();
-                alert('Tiến độ học đã được thiết lập lại thành công!');
+                ui.modal.alert('Tiến độ học đã được thiết lập lại thành công!');
                 toggleView('learn');
             },
         };
@@ -516,7 +566,7 @@
                 const url = document.getElementById('api-url').value.trim();
 
                 if (!url || !u || !p) {
-                    alert("Vui lòng nhập đầy đủ URL, Username và Password!");
+                    ui.modal.alert("Vui lòng nhập đầy đủ URL, Username và Password!");
                     return;
                 }
 
@@ -534,19 +584,21 @@
                         admin.setLoggedInState(true);
                         await app.loadCards(); 
 						admin.renderCardList();
-                        alert("Đăng nhập thành công!");  
+                        ui.modal.alert("Đăng nhập thành công!");  
                     } else {
-                        alert("Đăng nhập thất bại: " + (result.message || "Lỗi không xác định"));
+                        ui.modal.alert("Đăng nhập thất bại: " + (result.message || "Lỗi không xác định"));
                     }
                 } catch (e) {
                     console.error(e);
-                    alert("Lỗi kết nối đến server login!");
+                    ui.modal.alert("Lỗi kết nối đến server login!");
                 } finally {
                     ui.showLoading(false);
                 }
             },
-            logout: () => {
-                if(confirm("Bạn muốn đăng xuất?")) {
+            logout: async () => {
+				const confirmed = await ui.modal.confirm(`Bạn muốn đăng xuất?`, 'Đăng Xuất');
+                
+				if(confirmed) {
                     state.settings.token = null;
                     state.settings.username = null;
                     localStorage.setItem('srs_settings', JSON.stringify(state.settings));
@@ -557,55 +609,104 @@
             setLoggedInState: (isLoggedIn) => {
                 const form = document.getElementById('login-form');
                 const loggedView = document.getElementById('logged-in-view');
-                const manager = document.getElementById('card-manager');
+                //const manager = document.getElementById('card-manager');
                 
                 if (isLoggedIn) {
                     form.classList.add('hidden');
                     loggedView.classList.remove('hidden');
-                    manager.classList.remove('opacity-50', 'pointer-events-none');
+                    //manager.classList.remove('opacity-50', 'pointer-events-none');
                     loggedView.querySelector('p').innerHTML = `<i class="fas fa-check-circle"></i> Xin chào, <b>${state.settings.username}</b>`;
                 } else {
                     form.classList.remove('hidden');
                     loggedView.classList.add('hidden');
-                    manager.classList.add('opacity-50', 'pointer-events-none');
+                    //manager.classList.add('opacity-50', 'pointer-events-none');
                 }
             },
+			
+			// NEW: Cập nhật API Endpoint và lưu vào state
+			updateApiEndpoint: async () => {
+				const inputElement = document.getElementById('api-url');
+				const newEndpoint = inputElement.value.trim();
 
-            // NEW: Renders the category list table (Chỉ để xem và xóa)
-            renderCategoryManager: () => {
-                const tableContainer = document.getElementById('category-manager-table');
-                if (!tableContainer) return;
-                
-                // Lấy danh sách duy nhất các category đã được tạo
-                const uniqueCategories = new Set(Object.values(state.cardCategoryMap).filter(c => c));
-                
-                let html = `
-                    <div class="flex p-3 border-b font-bold text-xs text-gray-600 bg-gray-100">
-                        <span class="flex-1">Tên Nhóm (${uniqueCategories.size} nhóm)</span>
-                        <span class="w-16 text-right">Thao tác</span>
-                    </div>
-                `;
+				if (!newEndpoint) {
+					ui.modal.alert("Vui lòng nhập một URL hợp lệ.", "Lỗi Cập nhật");
+					return;
+				}
+				
+				// Lưu endpoint mới vào state
+				state.settings.apiUrl = newEndpoint;
+				app.saveProgress();
 
-                if (uniqueCategories.size === 0) {
-                    html += '<p class="p-3 text-center text-gray-400 text-sm">Chưa có nhóm thẻ tùy chỉnh nào.</p>';
-                } else {
-                    uniqueCategories.forEach(categoryName => {
-                        // Sanitize category name for function call
-                        const safeName = categoryName.replace(/'/g, "\\'");
-                        
-                        html += `
-                            <div class="flex p-3 items-center bg-white border-b last:border-0">
-                                <span class="flex-1 font-medium">${categoryName}</span>
-                                <div class="w-16 flex gap-2 justify-end">
-                                    <button onclick="admin.deleteCategory('${safeName}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i> Xóa</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
+				ui.modal.alert("Đã cập nhật API Endpoint thành công!", "Thành công");
+			},
 
-                tableContainer.innerHTML = html;
-            },
+            // UPDATED: Renders the category list table (ĐÃ SỬA LỖI HIỂN THỊ NÚT)
+			renderCategoryManager: () => {
+				const tableContainer = document.getElementById('category-manager-table');
+				if (!tableContainer) return;
+				
+				const uniqueCategories = new Set(Object.values(state.cardCategoryMap).filter(c => c));
+				
+				let html = `
+					<div class="flex p-3 border-b font-bold text-xs text-gray-600 bg-gray-100">
+						<span class="flex-1">Tên Nhóm (${uniqueCategories.size} nhóm)</span>
+						<span class="w-32 text-right">Thao tác</span> </div>
+				`;
+
+				if (uniqueCategories.size === 0) {
+					html += '<p class="p-3 text-center text-gray-400 text-sm">Chưa có nhóm thẻ tùy chỉnh nào.</p>';
+				} else {
+					uniqueCategories.forEach(categoryName => {
+						const safeName = categoryName.replace(/'/g, "\\'");
+						
+						html += `
+							<div class="flex p-3 items-center bg-white border-b last:border-0">
+								<span class="flex-1 font-medium">${categoryName}</span>
+								<div class="w-32 flex gap-2 justify-end items-center"> <button onclick="admin.renameCategory('${safeName}')" class="text-blue-500 hover:text-blue-700 text-sm whitespace-nowrap"><i class="fas fa-pencil-alt mr-1"></i> Đổi tên</button>
+									<button onclick="admin.deleteCategory('${safeName}')" class="text-red-500 hover:text-red-700 text-sm whitespace-nowrap"><i class="fas fa-trash"></i> Xóa</button>
+								</div>
+							</div>
+						`;
+					});
+				}
+
+				tableContainer.innerHTML = html;
+			},
+			
+			// NEW: Đổi tên một nhóm thẻ
+			renameCategory: async (oldName) => {
+				const newName = await ui.modal.prompt(
+					`Nhập tên mới cho nhóm thẻ "${oldName}":`, 
+					"Đổi tên nhóm", 
+					oldName
+				);
+				
+				// Nếu người dùng nhấn Hủy (trả về null) hoặc không nhập gì khác
+				if (newName === null || newName.trim() === '' || newName.trim() === oldName) {
+					return; 
+				}
+				
+				const finalNewName = newName.trim();
+				
+				// 1. Cập nhật cardCategoryMap
+				Object.keys(state.cardCategoryMap).forEach(cardId => {
+					if (state.cardCategoryMap[cardId] === oldName) {
+						state.cardCategoryMap[cardId] = finalNewName;
+					}
+				});
+
+				// 2. Cập nhật bộ lọc đang sử dụng (nếu cần)
+				if (state.selectedCategory === oldName) {
+					state.selectedCategory = finalNewName;
+				}
+
+				app.saveProgress();
+				admin.renderCategoryManager();
+				admin.renderCategoryFilter();
+				app.calculateDueCards();
+				admin.renderCardList();
+				ui.modal.alert(`Đã đổi tên nhóm thẻ từ "${oldName}" thành "${finalNewName}" thành công!`);
+			},
 
             // NEW: Renders dropdown for studying category
             renderCategoryFilter: () => {
@@ -636,10 +737,9 @@
             },
 
             // NEW: Deletes a category and unassigns all associated cards
-            deleteCategory: (name) => {
-                if (!confirm(`Bạn có chắc chắn muốn xóa nhóm thẻ "${name}"? Các thẻ thuộc nhóm này sẽ trở về trạng thái chưa phân loại.`)) {
-                    return;
-                }
+            deleteCategory: async (name) => {
+                const confirmed = await ui.modal.confirm(`Bạn có chắc chắn muốn xóa nhóm thẻ "${name}"? Các thẻ thuộc nhóm này sẽ trở về trạng thái chưa phân loại.`, 'Xóa Nhóm Thẻ');
+				if (!confirmed) return;
                 
                 // Xóa tất cả các card thuộc nhóm này khỏi bản đồ
                 Object.keys(state.cardCategoryMap).forEach(cardId => {
@@ -658,7 +758,7 @@
                 admin.renderCategoryFilter();
                 app.calculateDueCards();
                 admin.renderCardList(); // Render lại danh sách để cập nhật trạng thái phân loại
-                alert(`Nhóm thẻ "${name}" đã được xóa.`);
+                ui.modal.alert(`Nhóm thẻ "${name}" đã được xóa.`);
             },
             
             // BATCH ASSIGNMENT LOGIC
@@ -709,7 +809,7 @@
 			openBatchCategoryModal: () => {
 				const selectedIds = admin.getSelectedCardIds();
 				if (selectedIds.length === 0) {
-					alert("Vui lòng chọn ít nhất một thẻ để gán nhóm.");
+					ui.modal.alert("Vui lòng chọn ít nhất một thẻ để gán nhóm.");
 					return;
 				}
 
@@ -753,89 +853,140 @@
 				modal.classList.remove('hidden');
 			},
 
-            // NEW: Lưu việc Gán Nhóm Hàng Loạt
-            saveBatchAssignment: () => {
-                const selectedIds = admin.getSelectedCardIds();
-                const select = document.getElementById('batch-category-select');
-                const newNameInput = document.getElementById('new-category-name');
-                const assignmentMode = document.querySelector('input[name="assignment-mode"]:checked').value;
-                
-                let categoryToAssign = select.value;
+            // UPDATED: Lưu việc Gán Nhóm Hàng Loạt (Đã loại bỏ assignmentMode)
+			saveBatchAssignment: () => {
+				const selectedIds = admin.getSelectedCardIds();
+				const select = document.getElementById('batch-category-select');
+				const newNameInput = document.getElementById('new-category-name');
+				
+				// Đã loại bỏ: const assignmentMode = document.querySelector('input[name="assignment-mode"]:checked').value;
+				
+				let categoryToAssign = select.value;
 
-                // 1. Xác định tên nhóm mới
-                if (categoryToAssign === 'NEW_CATEGORY') {
-                    categoryToAssign = newNameInput.value.trim();
-                    if (!categoryToAssign) {
-                        alert("Vui lòng nhập tên nhóm mới!");
-                        return;
-                    }
-                }
-                
-                // 2. Thực hiện gán (chế độ thay thế)
-                selectedIds.forEach(cardId => {
-                    if (assignmentMode === 'replace') {
-                        state.cardCategoryMap[cardId] = categoryToAssign;
-                    }
-                    // Mode 'add' hiện tại đang disabled, có thể bỏ qua
-                });
+				// 1. Xác định tên nhóm mới
+				if (categoryToAssign === 'NEW_CATEGORY') {
+					categoryToAssign = newNameInput.value.trim();
+					if (!categoryToAssign) {
+						ui.modal.alert("Vui lòng nhập tên nhóm mới!");
+						return;
+					}
+				}
+				
+				// 2. Thực hiện gán (Mặc định là thay thế/ghi đè nhóm)
+				selectedIds.forEach(cardId => {
+					state.cardCategoryMap[cardId] = categoryToAssign;
+				});
 
-                // 3. Reset UI và Lưu
-                admin.toggleSelectAllAdmin(false); // Bỏ chọn tất cả
-                app.saveProgress();
-                app.calculateDueCards();
-                admin.renderCardList(); // Render lại danh sách để thấy nhóm mới
-                admin.renderCategoryManager(); // Render lại danh sách nhóm quản lý
-                document.getElementById('modal-batch-assign').classList.add('hidden');
-                alert(`Đã gán thành công ${selectedIds.length} thẻ vào nhóm "${categoryToAssign}"!`);
-            },
+				// 3. Reset UI và Lưu
+				admin.toggleSelectAllAdmin(false); // Bỏ chọn tất cả
+				app.saveProgress();
+				app.calculateDueCards();
+				admin.renderCardList(); 
+				admin.renderCategoryManager();
+				document.getElementById('modal-batch-assign').classList.add('hidden');
+				ui.modal.alert(`Đã gán thành công ${selectedIds.length} thẻ vào nhóm "${categoryToAssign}"!`);
+			},
             
-            // UPDATED: renderCardList (Thêm checkbox)
-            renderCardList: () => {
-                const list = document.getElementById('admin-card-list');
-                
-                // Tái tạo lại danh sách thẻ đã chọn (selected cards) dựa trên state
-                const selectedCardIds = admin.getSelectedCardIds();
-                
-                if(!state.cards || state.cards.length === 0) {
-                    list.innerHTML = '<p class="text-center text-gray-400 p-4">Chưa có thẻ nào.</p>';
-                    admin.renderCategoryFilter();
-                    admin.renderCategoryManager();
-                    admin.updateActionBar();
-                    return;
-                }
-                
-                admin.renderCategoryFilter();
-                admin.renderCategoryManager();
+            // UPDATED: renderCardList (Thêm Tìm kiếm và Sắp xếp)
+			renderCardList: () => {
+				const list = document.getElementById('admin-card-list');
+				const selectedCardIds = admin.getSelectedCardIds();
+				const isLoggedIn = !!state.settings.token;
+				
+				if(!state.cards || state.cards.length === 0) {
+					list.innerHTML = '<p class="text-center text-gray-400 p-4">Chưa có thẻ nào.</p>';
+					admin.updateActionBar();
+					admin.updateCardAdminTitle();
+					return;
+				}
+				
+				// 1. LẤY GIÁ TRỊ TÌM KIẾM VÀ SẮP XẾP
+				const searchTerm = document.getElementById('admin-search-input')?.value.toLowerCase() || '';
+				const sortBy = document.getElementById('admin-sort-by')?.value || 'default';
 
-                list.innerHTML = state.cards.map(c => {
-                    const isSelected = selectedCardIds.includes(c.id);
-                    const currentCategory = state.cardCategoryMap[c.id] ? `(<span class="text-xs text-indigo-500">${state.cardCategoryMap[c.id]}</span>)` : '';
-                    
-                    return `
-                        <div class="flex p-3 items-center bg-gray-50 hover:bg-white border-b last:border-0 card-row" data-card-id="${c.id}">
-                            <input 
-                                type="checkbox" 
-                                class="card-select-checkbox h-4 w-4 rounded border-gray-300 text-indigo-600 mr-3" 
-                                data-card-id="${c.id}"
-                                onchange="admin.updateActionBar()"
-                                ${isSelected ? 'checked' : ''}
-                            >
-                            
-                            <div class="flex-1 truncate pr-4">
-                                <span class="font-bold text-indigo-700">${c.kanji}</span>
-                                <span class="text-xs text-gray-500 block truncate">${c.meaning} ${currentCategory}</span>
-                            </div>
-                            
-                            <div class="w-20 flex gap-3 justify-end shrink-0">
-                                <button onclick="admin.openEditModal('${c.id}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
-                                <button onclick="admin.deleteCard('${c.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                admin.updateActionBar();
-            },
+				let filteredCards = [...state.cards]; // Tạo bản sao để lọc
+				
+				// 2. TÌM KIẾM (FILTERING)
+				if (searchTerm) {
+					filteredCards = filteredCards.filter(c => 
+						c.kanji.toLowerCase().includes(searchTerm) ||
+						c.kana.toLowerCase().includes(searchTerm) ||
+						c.meaning.toLowerCase().includes(searchTerm)
+					);
+				}
+				
+				// 3. SẮP XẾP (SORTING)
+				if (sortBy !== 'default') {
+					filteredCards.sort((a, b) => {
+						switch (sortBy) {
+							case 'kanji_asc':
+								return a.kanji.localeCompare(b.kanji);
+							case 'kanji_desc':
+								return b.kanji.localeCompare(a.kanji);
+							case 'newest':
+								// So sánh timestamp (số lớn hơn là mới hơn)
+								return Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0); 
+							case 'oldest':
+								// So sánh timestamp (số nhỏ hơn là cũ hơn)
+								return Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0);
+							default:
+								return 0;
+						}
+					});
+					
+					// **LƯU Ý QUAN TRỌNG VỀ SẮP XẾP THEO THỜI GIAN:**
+					// Nếu các thẻ của bạn KHÔNG có trường timestamp (như `c.createdAt`), việc sắp xếp 'newest'/'oldest' 
+					// sẽ không chính xác. Hiện tại, tôi giữ nguyên thứ tự.
+					// Nếu bạn muốn sắp xếp theo thứ tự thêm vào, bạn cần lưu trữ timestamp khi tạo thẻ.
+					// Ví dụ: case 'newest': return b.createdAt - a.createdAt;
+				}
+				
+				// Cập nhật tiêu đề sau khi lọc
+				admin.updateCardAdminTitle(filteredCards.length); 
+
+				if (filteredCards.length === 0) {
+					list.innerHTML = `<p class="text-center text-gray-400 p-4">Không tìm thấy thẻ nào khớp với "${searchTerm}".</p>`;
+					admin.updateActionBar();
+					return;
+				}
+
+				// 4. RENDERING
+				const actionButtons = isLoggedIn ? 
+					(c) => `
+						<button onclick="admin.openEditModal('${c.id}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+						<button onclick="admin.deleteCard('${c.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+					` 
+					: 
+					(c) => `<span class="text-xs text-gray-400"></span>`; 
+				
+				list.innerHTML = filteredCards.map(c => {
+					const isSelected = selectedCardIds.includes(c.id);
+					const currentCategory = state.cardCategoryMap[c.id] ? `(<span class="text-xs text-indigo-500">${state.cardCategoryMap[c.id]}</span>)` : '';
+					
+					return `
+						<div class="flex p-3 items-center bg-gray-50 hover:bg-white border-b last:border-0 card-row" data-card-id="${c.id}">
+							<input 
+								type="checkbox" 
+								class="card-select-checkbox h-4 w-4 rounded border-gray-300 text-indigo-600 mr-3" 
+								data-card-id="${c.id}"
+								onchange="admin.updateActionBar()"
+								${isSelected ? 'checked' : ''}
+							>
+							
+							<div class="flex-1 truncate pr-4">
+								<span class="font-bold text-indigo-700">${c.kanji}</span>
+								<span class="text-xs text-gray-500 block truncate">${c.meaning} ${currentCategory}</span>
+							</div>
+							
+							<div class="w-20 flex gap-3 justify-end shrink-0">
+								${actionButtons(c)}
+							</div>
+						</div>
+					`;
+				}).join('');
+				
+				admin.updateActionBar();
+			},
 
             openEditModal: (id = null) => {
                 const modal = document.getElementById('modal-edit');
@@ -863,7 +1014,7 @@
                 const token = state.settings.token;
 
                 if (!token) {
-                    alert("Bạn chưa đăng nhập hoặc phiên làm việc hết hạn!");
+                    ui.modal.alert("Bạn chưa đăng nhập hoặc phiên làm việc hết hạn!");
                     return;
                 }
 
@@ -872,7 +1023,8 @@
                     kanji: document.getElementById('edit-kanji').value,
                     kana: document.getElementById('edit-kana').value,
                     meaning: document.getElementById('edit-meaning').value,
-                    example: document.getElementById('edit-example').value
+                    example: document.getElementById('edit-example').value,
+					createdAt: Date.now()
                 };
 
                 if (id) {
@@ -894,28 +1046,29 @@
 
                     if (result.success) {
                         await app.loadCards();
-						alert(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
+						ui.modal.alert(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
                         document.getElementById('modal-edit').classList.add('hidden');
                         
                     } else {
-                        alert("Lỗi: " + result.message);
+                        ui.modal.alert("Lỗi: " + result.message);
                     }
                 } catch (e) {
                     console.error(e);
-                    alert("Lỗi kết nối khi lưu thẻ!");
+                    ui.modal.alert("Lỗi kết nối khi lưu thẻ!");
                 } finally {
                     ui.showLoading(false);
                 }
             },
 
             deleteCard: async (id) => {
-                if(!confirm('Bạn chắc chắn muốn xóa thẻ này?')) return;
+                const confirmed = await ui.modal.confirm('Bạn chắc chắn muốn xóa thẻ này? Thao tác này không thể hoàn tác.', 'Xóa Thẻ');
+				if(!confirmed) return;
                 
                 const apiUrl = state.settings.apiUrl;
                 const token = state.settings.token;
 
                 if (!token) {
-                    alert("Lỗi token! Vui lòng đăng nhập lại.");
+                    ui.modal.alert("Lỗi token! Vui lòng đăng nhập lại.");
                     return;
                 }
 
@@ -940,15 +1093,23 @@
                         delete state.cardCategoryMap[id];
                         await app.loadCards();
                     } else {
-                        alert("Không thể xóa: " + result.message);
+                        ui.modal.alert("Không thể xóa: " + result.message);
                     }
                 } catch (e) {
                     console.error(e);
-                    alert("Lỗi kết nối khi xóa thẻ!");
+                    ui.modal.alert("Lỗi kết nối khi xóa thẻ!");
                 } finally {
                     ui.showLoading(false);
                 }
-            }
+            },
+			
+			updateCardAdminTitle: (filteredCount = state.cards.length) => {
+				const titleElement = document.getElementById('card-admin-title');
+				if (titleElement) {
+					// Hiển thị tổng số thẻ nếu không có tìm kiếm, hoặc số lượng đã lọc
+					titleElement.innerText = `Danh sách Thẻ (${filteredCount} thẻ)`;
+				}
+			}
         };
 
         // --- UI & INTERACTIONS ---
@@ -1161,18 +1322,148 @@
                         overlay.classList.add('hidden');
                     }, 300);
                 }
-            }
+            },
+			
+			// Thêm đối tượng modal mới vào trong JS (trong phần UI & Interactions)
+			modal: {
+				// Lưu các hàm callback
+				_resolve: null,
+
+				// Khởi tạo các phần tử DOM
+				_initElements: () => {
+					ui.modal.backdrop = document.getElementById('custom-modal-backdrop');
+					ui.modal.title = document.getElementById('modal-title-custom');
+					ui.modal.message = document.getElementById('modal-message-custom');
+					ui.modal.input = document.getElementById('modal-input-custom');
+					ui.modal.cancelBtn = document.getElementById('modal-cancel-btn');
+					ui.modal.primaryBtn = document.getElementById('modal-primary-btn');
+				},
+
+				// Hàm hiển thị modal chung
+				_show: (title, message, mode, onConfirm, onCancel = null, defaultValue = '') => {
+					ui.modal._initElements(); // Đảm bảo các phần tử được khởi tạo
+					
+					// Cài đặt nội dung
+					ui.modal.title.innerText = title;
+					ui.modal.message.innerText = message;
+					
+					// Cài đặt giao diện
+					if (mode === 'prompt') {
+						ui.modal.input.value = defaultValue;
+						ui.modal.input.classList.remove('hidden');
+						ui.modal.cancelBtn.classList.remove('hidden');
+						ui.modal.primaryBtn.innerText = 'Lưu';
+						ui.modal.primaryBtn.classList.remove('bg-indigo-600');
+						ui.modal.primaryBtn.classList.add('bg-blue-600'); // Màu khác cho thao tác lưu
+						
+					} else if (mode === 'confirm') {
+						ui.modal.input.classList.add('hidden');
+						ui.modal.cancelBtn.classList.remove('hidden');
+						ui.modal.primaryBtn.innerText = 'Xác nhận';
+						ui.modal.primaryBtn.classList.remove('bg-indigo-600');
+						ui.modal.primaryBtn.classList.add('bg-red-600');
+					} else { // 'alert'
+						ui.modal.input.classList.add('hidden');
+						ui.modal.cancelBtn.classList.add('hidden');
+						ui.modal.primaryBtn.innerText = 'OK';
+						ui.modal.primaryBtn.classList.remove('bg-red-600');
+						ui.modal.primaryBtn.classList.add('bg-indigo-600');
+					}
+
+					// Ẩn/hiện và animation
+					ui.modal.backdrop.classList.remove('hidden');
+					setTimeout(() => {
+						ui.modal.backdrop.classList.remove('opacity-0');
+						document.getElementById('custom-modal-content').classList.remove('scale-95');
+						if (mode === 'prompt') ui.modal.input.focus(); // Tự động focus vào input
+					}, 10);
+					
+					// Xóa lắng nghe cũ và thiết lập lắng nghe mới
+					ui.modal.primaryBtn.onclick = () => {
+						ui.modal._hide();
+						if (onConfirm) onConfirm(mode === 'prompt' ? ui.modal.input.value : null);
+					};
+					
+					ui.modal.cancelBtn.onclick = () => {
+						ui.modal._hide();
+						if (onCancel) onCancel();
+					};
+				},
+
+				// Hàm ẩn modal
+				_hide: () => {
+					ui.modal.backdrop.classList.add('opacity-0');
+					document.getElementById('custom-modal-content').classList.add('scale-95');
+					setTimeout(() => {
+						ui.modal.backdrop.classList.add('hidden');
+					}, 200);
+				},
+
+				// ----------------------------------------------------
+				// PHƯƠNG THỨC CÔNG KHAI (DỄ DÀNG SỬ DỤNG)
+				// ----------------------------------------------------
+
+				// Sử dụng cho thông báo (thay thế alert)
+				alert: (message, title = "Thông Báo") => {
+					setTimeout(() => {
+						ui.modal._show(title, message, 'alert', null);
+					}, 250);
+					//ui.modal._show(title, message, 'alert', null);
+				},
+
+				// Sử dụng cho xác nhận (thay thế confirm)
+				confirm: (message, title = "Xác nhận hành động") => {
+					return new Promise((resolve) => {
+						ui.modal._resolve = resolve;
+						
+						ui.modal._show(
+							title, 
+							message, 
+							'confirm', 
+							() => resolve(true), // Hàm onConfirm
+							() => resolve(false) // Hàm onCancel
+						);
+					});
+				},
+				
+				// Sử dụng cho nhập dữ liệu (thay thế prompt)
+				prompt: (message, title = "Nhập dữ liệu", defaultValue = '') => {
+					return new Promise((resolve) => {
+						ui.modal._resolve = resolve;
+						
+						ui.modal._show(
+							title, 
+							message, 
+							'prompt', 
+							// onConfirm: trả về giá trị đã nhập
+							(inputValue) => resolve(inputValue), 
+							// onCancel: trả về null
+							() => resolve(null), 
+							defaultValue
+						);
+					});
+				}
+			}
         };
 
         // Helper functions
-        function toggleView(viewName) {
-            const adminPanel = document.getElementById('view-admin');
-            if (viewName === 'admin') {
-                adminPanel.classList.remove('translate-y-full');
-            } else {
-                adminPanel.classList.add('translate-y-full');
-            }
-        }
+		function toggleView(viewName) {
+			const adminPanel = document.getElementById('view-admin');
+			const cardAdminPanel = document.getElementById('view-card-admin');
+
+			// Ẩn tất cả trước
+			adminPanel.classList.add('translate-y-full');
+			cardAdminPanel.classList.add('translate-y-full');
+			
+			// Hiển thị view mong muốn
+			if (viewName === 'admin') {
+				adminPanel.classList.remove('translate-y-full');
+				admin.renderCategoryManager(); // Đảm bảo làm mới danh sách nhóm
+			} else if (viewName === 'card-admin') {
+				cardAdminPanel.classList.remove('translate-y-full');
+				admin.renderCardList(); // Đảm bảo làm mới danh sách thẻ
+			}
+		}
         function toggleStats(show) {
             const modal = document.getElementById('modal-stats');
             if (show) {
