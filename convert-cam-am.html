@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển Đổi Cảm Âm Sáo Trúc - Nâng Cao</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f9;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 25px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        textarea#inputNote, textarea#noteMapping {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .shift-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .shift-button, .main-button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            flex-grow: 1;
+            margin: 0 5px;
+        }
+        .shift-button:hover, .main-button:hover {
+            background-color: #0056b3;
+        }
+        #shiftValueDisplay {
+            width: 120px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            flex-grow: 0;
+            padding: 5px;
+        }
+        .main-button {
+             display: block;
+             width: 100%;
+             font-size: 18px;
+             margin: 15px 0 0 0;
+        }
+        #output {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 18px;
+            min-height: 40px;
+            white-space: pre-wrap;
+        }
+        .note-format {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #777;
+            text-align: center;
+        }
+        .error-note {
+            color: red;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎶 Chuyển Đổi Cảm Âm Sáo Trúc</h1>
+
+    <label for="noteMapping">Định nghĩa Ký hiệu (Ví dụ: R=re, D=do):</label>
+    <textarea id="noteMapping" placeholder="Ví dụ: R=re, D=do, M=mi">d=do, r=re, m=mi, f=fa, s=sol, l=la</textarea>
+
+    <label for="inputNote">Nhập cảm âm gốc (Sử dụng ký hiệu đã định nghĩa, hỗ trợ nhiều dòng):</label>
+    <textarea id="inputNote">do2 re2 sib si
+D2 R2 M2
+</textarea>
+
+    <label>Mức dịch chuyển hiện tại (Nửa Cung):</label>
+    <div class="shift-controls">
+        <button class="shift-button" onclick="changeShift(-1)">- Nửa Cung</button>
+        <span id="shiftValueDisplay">0</span>
+        <button class="shift-button" onclick="changeShift(1)">+ Nửa Cung</button>
+    </div>
+
+    <button class="main-button" onclick="transposeNotes()">Thực hiện Chuyển Đổi</button>
+
+    <label for="output">Kết quả cảm âm đã chuyển đổi:</label>
+    <pre id="output"></pre>
+
+    <p class="note-format">
+        * Nốt bị **tô đỏ** là nốt bị dịch chuyển ra ngoài âm vực thấp (dưới C0).<br>
+        * Nốt quãng tám 1 sẽ không hiển thị số (ví dụ: <code>do1</code> -> <code>do</code>).
+    </p>
+</div>
+
+<script>
+    // --- Biến Trạng Thái ---
+    let currentShift = 0; // Mức dịch chuyển hiện tại (tính bằng semitones/nửa cung)
+    const MIN_OCTAVE = 0; // Giới hạn âm vực thấp nhất là C0
+
+    // --- 1. Cấu Trúc Dữ Liệu Nhạc Lý ---
+    const NOTES_12_SEMITONE_PRIO_FLAT = [
+        ["do", "si#"],  ["reb", "do#"], ["re"], ["mib", "re#"], ["mi", "fab"], ["fa", "mi#"], 
+        ["solb", "fa#"],["sol"], ["lab", "sol#"],["la"], ["sib", "la#"], ["si", "dob"] 
+    ];
+    
+    const NOTE_TO_SEMITONE = {};
+    NOTES_12_SEMITONE_PRIO_FLAT.forEach((names, index) => {
+        names.forEach(name => {
+            NOTE_TO_SEMITONE[name] = index;
+        });
+    });
+
+    // --- 2. Hàm Xử Lý Logic và UI ---
+
+    function changeShift(delta) {
+        currentShift += delta;
+        document.getElementById('shiftValueDisplay').textContent = currentShift;
+        transposeNotes(); 
+    }
+
+    function parseMapping(mappingStr) {
+        const mapping = {};
+        const entries = mappingStr.split(',').map(s => s.trim()).filter(s => s.includes('='));
+        
+        for (const entry of entries) {
+            const [key, value] = entry.split('=').map(s => s.trim());
+            if (key && value) {
+                mapping[key] = value.toLowerCase(); 
+            }
+        }
+        return Object.fromEntries(
+            Object.entries(mapping).sort(([,a], [,b]) => b.length - a.length)
+        );
+    }
+
+    function standardizeInput(rawInput, mapping) {
+        let standardized = rawInput;
+        const tokens = standardized.match(/([a-zA-Z0-Z0-9#b+-]+|\s+)/g) || [];
+        let processedTokens = [];
+        
+        for (let token of tokens) {
+            if (token.trim() === '') {
+                processedTokens.push(token);
+                continue;
+            }
+            let replaced = false;
+            for (const [key, value] of Object.entries(mapping)) {
+                const keyRegex = new RegExp(`^${key}`, 'i'); 
+                if (keyRegex.test(token)) {
+                    const remaining = token.substring(key.length);
+                    if (/^\d*$/.test(remaining)) {
+                        processedTokens.push(value + remaining);
+                        replaced = true;
+                        break;
+                    }
+                }
+            }
+            if (!replaced) {
+                processedTokens.push(token.toLowerCase());
+            }
+        }
+        return processedTokens.join('');
+    }
+
+    function parseNote(noteStr) {
+        const match = noteStr.toLowerCase().match(/^([a-z]+[#b]?)([0-9]?)$/);
+        if (!match) return null;
+        const noteName = match[1];
+        let octave = parseInt(match[2]) || 1; 
+
+        if (!(noteName in NOTE_TO_SEMITONE)) return null;
+
+        const semitoneIndex = NOTE_TO_SEMITONE[noteName];
+        const globalIndex = semitoneIndex + (octave * 12);
+
+        return { globalIndex, octave, noteName };
+    }
+
+    /**
+     * Chuyển đổi Semitone Index toàn cục mới về dạng chuỗi nốt nhạc.
+     * Trả về {note: string, status: 'ok'|'warning'|'error'}
+     */
+    function indexToNote(newGlobalIndex) {
+        let status = 'ok'; // Mặc định là OK
+        
+        const newOctave = Math.floor(newGlobalIndex / 12);
+        
+        // --- 1. Kiểm tra Lỗi & Cảnh báo Âm Vực ---
+        if (newOctave < MIN_OCTAVE) {
+            status = 'error'; // Lỗi: Dưới C0
+            // Đặt index về C0 để hiển thị nốt C0
+            newGlobalIndex = MIN_OCTAVE * 12; 
+        } else if (newOctave === MIN_OCTAVE) {
+            status = 'warning'; // Cảnh báo: Chính xác là C0
+        }
+
+        // --- 2. Xử lý Nốt Hiển Thị (Ưu tiên Giáng) ---
+        const newSemitoneIndex = (newGlobalIndex % 12 + 12) % 12; 
+        const noteOptions = NOTES_12_SEMITONE_PRIO_FLAT[newSemitoneIndex];
+        let preferredNote = noteOptions[0];
+
+        // --- 3. Xử lý Quãng Tám ---
+        let octaveStr = newOctave.toString();
+        // Nốt quãng 8 1 (hoặc MIN_OCTAVE = 0) thường không có số
+        if (newOctave === 1 || newOctave === MIN_OCTAVE) { 
+            octaveStr = ''; 
+        }
+
+        return { note: preferredNote + octaveStr, status: status };
+    }
+
+
+    /**
+     * Hàm chính thực hiện dịch chuyển cảm âm
+     */
+    function transposeNotes() {
+        const mappingStr = document.getElementById('noteMapping').value;
+        const rawInputStr = document.getElementById('inputNote').value;
+        const outputPre = document.getElementById('output');
+        
+        const noteMapping = parseMapping(mappingStr);
+        const standardizedInput = standardizeInput(rawInputStr, noteMapping);
+        const lines = standardizedInput.split('\n');
+        let finalOutput = [];
+
+        for (const line of lines) {
+            const lineTokens = line.match(/([a-z]+[#b]?[0-9]?|\s+|[^a-z#b0-9\s])/gi) || [];
+            let outputLineTokens = [];
+
+            for (const token of lineTokens) {
+                if (token.trim() === '') {
+                    outputLineTokens.push(token);
+                    continue;
+                }
+                
+                const parsed = parseNote(token);
+
+                if (parsed) {
+                    let newGlobalIndex = parsed.globalIndex + currentShift;
+                    
+                    const result = indexToNote(newGlobalIndex);
+                    
+                    if (result.status === 'error') {
+                        // Tô đỏ: Dưới C0
+                        outputLineTokens.push(`<span class="error-note">${result.note}</span>`);
+                    } else if (result.status === 'warning') {
+                        // Tô cam: Tại C0
+                        outputLineTokens.push(`<span class="warning-note">${result.note}</span>`);
+                    }
+                     else {
+                        outputLineTokens.push(result.note);
+                    }
+                } else {
+                    outputLineTokens.push(token); 
+                }
+            }
+            finalOutput.push(outputLineTokens.join(''));
+        }
+
+        const result = finalOutput.join('\n');
+        outputPre.innerHTML = result;
+    }
+
+    // --- Cập nhật CSS để hỗ trợ màu Cam (Warning) ---
+    // Thêm CSS mới cho màu cam
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        .error-note {
+            color: red;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .warning-note {
+            color: orange;
+            font-weight: bold;
+        }
+    `;
+    document.head.appendChild(styleElement);
+
+
+    // Chạy lần đầu khi DOM đã tải
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('shiftValueDisplay').textContent = currentShift;
+        
+        // Cập nhật ví dụ mặc định
+        document.getElementById('noteMapping').value = "d=do, r=re, m=mi, f=fa, s=sol, l=la";
+        document.getElementById('inputNote').value = "do2 re2 sib si\nD2 R2 M2";
+        
+        transposeNotes(); 
+    });
+</script>
+
+</body>
+</html>
